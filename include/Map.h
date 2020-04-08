@@ -84,6 +84,7 @@ public:
 protected:
 
     void SaveMapPoint( ofstream &f, MapPoint* mp );
+    void SaveSemanticMapPoint( ofstream &f, MapPoint* mp );
     void SaveKeyFrame( ofstream &f, KeyFrame* kf );
 
     std::set<MapPoint*> mspMapPoints;
@@ -99,7 +100,7 @@ protected:
     std::mutex mMutexMap;
 
     // It saves the Index of the MapPoints that matches the ORB featurepoint
-    std::map<MapPoint*, unsigned long int> mmpnMapPointsIdx; 
+    std::map<MapPoint*, unsigned long int> mmpnMapPointsIdx;
     void GetMapPointsIdx();
     void SaveFrameID( ofstream &f );
 };

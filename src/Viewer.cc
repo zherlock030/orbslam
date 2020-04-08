@@ -20,7 +20,7 @@
 
 #include "Viewer.h"
 #include <pangolin/pangolin.h>
-
+#include <unistd.h>
 #include <mutex>
 
 namespace ORB_SLAM2
@@ -148,7 +148,7 @@ void Viewer::Run()
             else{
                 sprintf(ad, "%s/Pictures/ORB-SLAM2/ORB-SLAM2_img_%06d.jpg", homepath.c_str(), ++img_num);
             }
-            
+
             cv::imwrite(ad, im);
             // Please see System.cc, I need to add current path.
             mpFrameDrawer->mbSaveImage = false;

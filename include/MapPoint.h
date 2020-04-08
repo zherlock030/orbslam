@@ -64,7 +64,7 @@ public:
     void SetBadFlag();
     bool isBad();
 
-    void Replace(MapPoint* pMP);    
+    void Replace(MapPoint* pMP);
     MapPoint* GetReplaced();
 
     void IncreaseVisible(int n=1);
@@ -85,12 +85,17 @@ public:
     int PredictScale(const float &currentDist, KeyFrame*pKF);
     int PredictScale(const float &currentDist, Frame* pF);
 
+    void SetLabel(string l); //***zh
+    //void SetLabel(int l=0); //***zh
+
 public:
     long unsigned int mnId;
     static long unsigned int nNextId;
     long int mnFirstKFid;
     long int mnFirstFrame;
     int nObs;
+    //int label; //***ZH
+    string label;
 
     // Variables used by the tracking
     float mTrackProjX;
@@ -109,14 +114,14 @@ public:
     // Variables used by loop closing
     long unsigned int mnLoopPointForKF;
     long unsigned int mnCorrectedByKF;
-    long unsigned int mnCorrectedReference;    
+    long unsigned int mnCorrectedReference;
     cv::Mat mPosGBA;
     long unsigned int mnBAGlobalForKF;
 
 
     static std::mutex mGlobalMutex;
 
-protected:    
+protected:
 
      // Position in absolute coordinates
      cv::Mat mWorldPos;

@@ -41,6 +41,7 @@ MapPoint::MapPoint(const cv::Mat &Pos, KeyFrame *pRefKF, Map* pMap):
     // MapPoints can be created from Tracking and Local Mapping. This mutex avoid conflicts with id.
     unique_lock<mutex> lock(mpMap->mMutexPointCreation);
     mnId=nNextId++;
+    //label = 0; // ***zh
 }
 
 MapPoint::MapPoint(const cv::Mat &Pos, Map* pMap, Frame* pFrame, const int &idxF):
@@ -68,6 +69,7 @@ MapPoint::MapPoint(const cv::Mat &Pos, Map* pMap, Frame* pFrame, const int &idxF
     // MapPoints can be created from Tracking and Local Mapping. This mutex avoid conflicts with id.
     unique_lock<mutex> lock(mpMap->mMutexPointCreation);
     mnId=nNextId++;
+    //label = 0; // ***zh
 }
 
 MapPoint::MapPoint(const cv::Mat &Pos, Map* pMap):// When loading map, we redefine MapPoint
@@ -81,6 +83,8 @@ MapPoint::MapPoint(const cv::Mat &Pos, Map* pMap):// When loading map, we redefi
     // MapPoints can be created from Tracking and Local Mapping. This mutex avoid conflicts with id.
     unique_lock<mutex> lock(mpMap->mMutexPointCreation);
     mnId=nNextId++;
+
+    //label = 0; // ***zh
 }
 
 void MapPoint::SetWorldPos(const cv::Mat &Pos)
@@ -88,6 +92,10 @@ void MapPoint::SetWorldPos(const cv::Mat &Pos)
     unique_lock<mutex> lock2(mGlobalMutex);
     unique_lock<mutex> lock(mMutexPos);
     Pos.copyTo(mWorldPos);
+}
+
+void MapPoint::SetLabel(string l = "background"){
+  label = l;
 }
 
 cv::Mat MapPoint::GetWorldPos()
@@ -109,9 +117,9 @@ KeyFrame* MapPoint::GetReferenceKeyFrame()
 }
 
 KeyFrame* MapPoint::SetReferenceKeyFrame(KeyFrame* RFKF)  // for map loading
-{  
+{
     return mpRefKF = RFKF;  // for map loading
-}  
+}
 
 void MapPoint::AddObservation(KeyFrame* pKF, size_t idx)
 {

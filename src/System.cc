@@ -27,7 +27,7 @@
 #include <iomanip>
 
 // Get current directory of the system
-#include <unistd.h>  
+#include <unistd.h>
 #include <dirent.h>
 
 static bool has_suffix(const std::string &str, const std::string &suffix) // Used when loading binary DBoW file.
@@ -124,12 +124,12 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
         char SaveImg;
         cout << "Do you want to save images from the viewer?(y/n)" << endl;
         cin >> SaveImg;
-        
+
         mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
         mptViewer = new thread(&Viewer::Run, mpViewer);
         mpTracker->SetViewer(mpViewer);
-        
-        if(SaveImg == 'Y' || SaveImg == 'y'){  
+
+        if(SaveImg == 'Y' || SaveImg == 'y'){
             mpViewer->mbSaveImg = true;
             cout << "I'll save these images under the directiry of: '/$(HOME)/Pictures/ORB-SLAM2/'  or  '/$(HOME)/Pictures/ORB-SLAM2-IMU/'" << endl;
         }
@@ -139,29 +139,29 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     char IsPureLocalization;
     cout << "Do you want to run pure localization?(y/n)" << endl;
     cin >> IsPureLocalization;
-    if(IsPureLocalization == 'Y' || IsPureLocalization == 'y'){  
+    if(IsPureLocalization == 'Y' || IsPureLocalization == 'y'){
         ActivateLocalizationMode();
     }
 
     //Load map
     char IsLoadMap;
 
-    //get the current absoulte path  
+    //get the current absoulte path
     std::string cwd = getcwd(NULL, 0);
-    cout << "The current dir is : " << cwd << endl; 
+    cout << "The current dir is : " << cwd << endl;
     string strPathSystemSetting = cwd + "/" + strSettingsFile.c_str();
 
-    cout << "Your setting file path is : " << strPathSystemSetting << endl; 
-    
-    string strPathMap = cwd + "/MapPointandKeyFrame.bin";
-    cout << "Your map file path would be : " << strPathMap << endl; 
+    cout << "Your setting file path is : " << strPathSystemSetting << endl;
 
-    cout << "Do you want to load the map?(y/n)" << endl;  
+    string strPathMap = cwd + "/MapPointandKeyFrame.bin";
+    cout << "Your map file path would be : " << strPathMap << endl;
+
+    cout << "Do you want to load the map?(y/n)" << endl;
     cin >> IsLoadMap;
-    SystemSetting *mySystemSetting = new SystemSetting(mpVocabulary);  
+    SystemSetting *mySystemSetting = new SystemSetting(mpVocabulary);
     mySystemSetting->LoadSystemSetting(strPathSystemSetting);
     // mySystemSetting->LoadSystemSetting("/home/boom/MY_ORB_SLAM2/ORB_SLAM2/Examples/Stereo/KITTI04-12.yaml");
-    if(IsLoadMap == 'Y' || IsLoadMap == 'y'){  
+    if(IsLoadMap == 'Y' || IsLoadMap == 'y'){
         mpMap->Load(strPathMap, mySystemSetting, mpKeyFrameDatabase);
     }
 
@@ -183,7 +183,7 @@ cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const
     {
         cerr << "ERROR: you called TrackStereo but input sensor was not set to STEREO." << endl;
         exit(-1);
-    }   
+    }
 
     // Check mode change
     {
@@ -234,7 +234,7 @@ cv::Mat System::TrackStereoWithIMU(const cv::Mat &imLeft, const cv::Mat &imRight
     {
         cerr << "ERROR: you called TrackStereo but input sensor was not set to STEREO." << endl;
         exit(-1);
-    }   
+    }
 
     // Check mode change
     {
@@ -292,7 +292,7 @@ cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const doub
     {
         cerr << "ERROR: you called TrackRGBD but input sensor was not set to RGBD." << endl;
         exit(-1);
-    }    
+    }
 
     // Check mode change
     {
@@ -337,7 +337,7 @@ cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const doub
     return Tcw;
 }
 
-cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp)
+cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp, int matID)//***zh
 {
     if(mSensor!=MONOCULAR)
     {
@@ -379,7 +379,7 @@ cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp)
         }
     }
 
-    cv::Mat Tcw = mpTracker->GrabImageMonocular(im,timestamp);
+    cv::Mat Tcw = mpTracker->GrabImageMonocular(im,timestamp, matID);
 
     unique_lock<mutex> lock2(mMutexState);
     mTrackingState = mpTracker->mState;
@@ -613,14 +613,14 @@ void System::SaveTrajectoryKITTI(const string &filename)
     cout << endl << "trajectory saved!" << endl;
 }
 
-void System::SaveMap(const string &filename)  
-{  
+void System::SaveMap(const string &filename)
+{
     mpMap->Save(filename);
 }
 
-// void System::LoadMap(const string &filename,SystemSetting* mySystemSetting)  
+// void System::LoadMap(const string &filename,SystemSetting* mySystemSetting)
 // {
-//     mpMap->Load(filename, mySystemSetting); 
+//     mpMap->Load(filename, mySystemSetting);
 // }
 
 
@@ -631,15 +631,15 @@ int System::GetTrackingState()
 }
 
 void System::SetSaveImageFlag(){
-    mpFrameDrawer->mbSaveImage = true; 
+    mpFrameDrawer->mbSaveImage = true;
 }
 
 void System::SetViewerIMUFlagTrue(){
-    mpViewer->mbUseIMU = true; 
+    mpViewer->mbUseIMU = true;
 }
 
 void System::SetViewerIMUFlagFalse(){
-    mpViewer->mbUseIMU = false; 
+    mpViewer->mbUseIMU = false;
 }
 
 vector<MapPoint*> System::GetTrackedMapPoints()

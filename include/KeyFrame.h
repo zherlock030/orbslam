@@ -123,6 +123,8 @@ public:
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
 public:
 
+    int matId; //***zh
+
     static long unsigned int nNextId;
     long unsigned int mnId;
     const long unsigned int mnFrameId;
@@ -225,7 +227,7 @@ protected:
     // Bad flags
     bool mbNotErase;
     bool mbToBeErased;
-    bool mbBad;    
+    bool mbBad;
 
     float mHalfBaseline; // Only for visualization
 

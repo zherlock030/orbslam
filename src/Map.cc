@@ -21,6 +21,8 @@
 #include "Map.h"
 
 #include<mutex>
+#include<iostream>
+#include<string>
 
 namespace ORB_SLAM2
 {
@@ -40,6 +42,14 @@ void Map::AddKeyFrame(KeyFrame *pKF)
 void Map::AddMapPoint(MapPoint *pMP)
 {
     unique_lock<mutex> lock(mMutexMap);
+    /*
+    //std::cout << "new point pos" << pMP->GetWorldPos() << std::endl;
+    cv::Mat tempPos = pMP->GetWorldPos();
+    if ( tempPos.at<float>(0,0) > 0 ){//*** by zh
+      pMP->SetLabel(1);
+      std::cout << "new point pos" << std::endl;
+    }
+    */
     mspMapPoints.insert(pMP);
 }
 
@@ -149,10 +159,10 @@ void Map::Save ( const string& filename )
 
     //Print The number of MapPoints
     cerr << "Map.cc :: The number of MapPoints is :"<<mspMapPoints.size()<<endl;
-        
 
-    //Grab the index of each MapPoint, count from 0, in which we initialized mmpnMapPointsIdx  
-    GetMapPointsIdx(); 
+
+    //Grab the index of each MapPoint, count from 0, in which we initialized mmpnMapPointsIdx
+    GetMapPointsIdx();
 
     //Print the number of KeyFrames
     cerr <<"Map.cc :: The number of KeyFrames:"<<mspKeyFrames.size()<<endl;
@@ -184,16 +194,48 @@ void Map::Save ( const string& filename )
             f.write((char*)&weight, sizeof(weight));
         }
     }
-
     // Save last Frame ID
     // SaveFrameID(f);
 
     f.close();
-    cerr<<"Map.cc :: Map Saving Finished!"<<endl;
+    cerr<<"Map.cc :: Original Map Saving Finished!"<<endl;
+
+
+    //***zh
+    string filename2 = "scmantic_saving.txt";
+    cerr<<"Map.cc :: Semantic Map Saving to "<<filename2 <<endl;
+    //ofstream f;
+    //f.open(filename.c_str(), ios_base::out|ios::binary);
+    f.open(filename2);
+    for ( auto mp: mspMapPoints ){
+        //Save MapPoint
+        SaveSemanticMapPoint( f, mp );
+        // cerr << "Map.cc :: Saving map point number: " << mp->mnId << endl;
+    }
+    f.close();
 }
 
+
+void Map::SaveSemanticMapPoint(ofstream& f, MapPoint* mp)//***zh
+{
+    f << "mappoint" << std::endl;
+    f << "global mappoint ID " << mmpnMapPointsIdx[mp] << " ";
+    //kf 是一个std::pair,<kf, index>
+    for (auto kf:mp->GetObservations()){
+      //
+      int ind = mp->GetIndexInKeyFrame(kf.first);
+      float x = kf.first->mvKeysUn[ind].pt.x;
+      float y = kf.first->mvKeysUn[ind].pt.y;
+      f << kf.first->matId << " " << ind << " " << x << " " << y << endl;
+    }
+
+
+
+}
+
+
 void Map::SaveMapPoint( ofstream& f, MapPoint* mp)
-{   
+{
     //Save ID and the x,y,z coordinates of the current MapPoint
     f.write((char*)&mp->mnId, sizeof(mp->mnId));
     cv::Mat mpWorldPos = mp->GetWorldPos();
@@ -282,6 +324,26 @@ void Map::GetMapPointsIdx()
 // {
 
 // }
+vector<string> split(const string& str, const string& delim) {
+	vector<string> res;
+	if("" == str) return res;
+	//先将要切割的字符串从string类型转换为char*类型
+	char * strs = new char[str.length() + 1] ; //不要忘了
+	strcpy(strs, str.c_str());
+
+	char * d = new char[delim.length() + 1];
+	strcpy(d, delim.c_str());
+
+	char *p = strtok(strs, d);
+	while(p) {
+		string s = p; //分割得到的字符串转换为string类型
+		res.push_back(s); //存入结果数组
+		p = strtok(NULL, d);
+	}
+
+	return res;
+}
+
 
 // Load map from file
 void Map::Load ( const string &filename, SystemSetting* mySystemSetting, KeyFrameDatabase* mpKeyFrameDatabase )
@@ -325,7 +387,7 @@ void Map::Load ( const string &filename, SystemSetting* mySystemSetting, KeyFram
     }
 
     cerr<<"Map.cc :: Max KeyFrame ID is: " << mnMaxKFid << ", and I set mnId to this number" <<endl;
-    
+
 
     cerr<<"Map.cc :: KeyFrame Load OVER!"<<endl;
 
@@ -349,7 +411,7 @@ void Map::Load ( const string &filename, SystemSetting* mySystemSetting, KeyFram
         // Read the number of Connected KeyFrames of current KeyFrame.
         unsigned long int nb_con;
         f.read((char*)&nb_con, sizeof(nb_con));
-        // Read id and weight of Connected KeyFrames of current KeyFrame, 
+        // Read id and weight of Connected KeyFrames of current KeyFrame,
         // and add Connected KeyFrames into covisibility graph.
         // cout<<"Map::Load : Read id and weight of Connected KeyFrames"<<endl;
         for ( unsigned long int i = 0; i < nb_con; i ++ )
@@ -375,7 +437,40 @@ void Map::Load ( const string &filename, SystemSetting* mySystemSetting, KeyFram
         }
    }
     f.close();
-    cerr<<"Map.cc :: Load IS OVER!"<<endl;
+    cerr<<"Map.cc :: Original Load IS OVER!"<<endl;
+
+    GetMapPointsIdx();//重新生成mmpnMapPointsIdx，mmpnMapPointsIdx[mp] = ind
+    ifstream f2;
+    string fname2 = "instance_saving.txt";
+    f2.open( fname2);
+    std::map<int,string> instance_list;
+    string str;
+    while (std::getline(f2,str)){
+      	vector<string> mp = split(str," ");
+        int ind = atoi(mp[0].c_str());
+        string instance;
+        for(int i=1; i < mp.size(); i++){
+          instance.append(mp[i]);
+        //std::cout << i << "th vec is " << mp[i] << endl;
+        }
+        //std::cout << "insatnce is " << instance <<endl;
+        instance_list[ind] = instance;//数字指向instance名
+    }
+    for (auto mp: vmp){
+      std::map<int,string>::iterator it;
+      int ind = mmpnMapPointsIdx[mp];
+      std::cout << "ind is " << ind <<endl;
+      it = instance_list.find(ind);
+      if (it != instance_list.end()){
+        mp->label = instance_list[ind];
+        cout << "label is " << instance_list[ind] << endl;
+      }
+    }
+    getchar();
+    getchar();
+
+    f2.close();
+
     return;
 }
 
@@ -404,7 +499,7 @@ KeyFrame* Map::LoadKeyFrame( ifstream &f, SystemSetting* mySystemSetting )
     // Since we need to initialize a lot of informatio about KeyFrame,
     // let's define a new class named InitKeyFrame.
     // It initializes with SystemSetting,
-    // which helps to read the configuration files(camera amtrix, ORB features, etc.) 
+    // which helps to read the configuration files(camera amtrix, ORB features, etc.)
     // We'll create "SystemSetting.cc" and "InitKeyFrame.cc"
     // and their header files in "src" and "include" folders.
 
@@ -466,7 +561,7 @@ KeyFrame* Map::LoadKeyFrame( ifstream &f, SystemSetting* mySystemSetting )
         //f.read((char*)&fDepthValue, sizeof(float));
         //KeypointDepth.push_back(fDepthValue);
 
-        
+
         // Read descriptors of keypoints
         f.read((char*)&initkf.Descriptors.cols, sizeof(initkf.Descriptors.cols));
         // for ( int j = 0; j < 32; j ++ ) // Since initkf.Descriptors.cols is always 32, for loop may also write like this.

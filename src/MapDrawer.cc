@@ -60,7 +60,24 @@ void MapDrawer::DrawMapPoints()
         if(vpMPs[i]->isBad() || spRefMPs.count(vpMPs[i]))
             continue;
         cv::Mat pos = vpMPs[i]->GetWorldPos();
+        //
+        /*
+        if (1){
+          glColor3f(0.0,0.0,1.0);
+          glVertex3f(pos.at<float>(0),pos.at<float>(1),pos.at<float>(2));
+          glColor3f(0.0,0.0,0.0);
+        }*/
+
+        if (vpMPs[i]->label != ""){
+          glColor3f(1.0,0.0,0.0);
+          glVertex3f(pos.at<float>(0),pos.at<float>(1),pos.at<float>(2));
+          glColor3f(0.0,0.0,0.0);
+        }
+
+        //***zh
+        else{
         glVertex3f(pos.at<float>(0),pos.at<float>(1),pos.at<float>(2));
+      }
     }
     glEnd();
 

@@ -23,7 +23,7 @@
 #include<algorithm>
 #include<fstream>
 #include<chrono>
-
+#include <unistd.h>
 #include<opencv2/core/core.hpp>
 
 #include<System.h>
@@ -46,6 +46,9 @@ int main(int argc, char **argv)
     vector<double> vTimestamps;
     string strFile = string(argv[3])+"/rgb.txt";
     LoadImages(strFile, vstrImageFilenames, vTimestamps);
+    //***zh, 第一张加载的图片就是文件夹的第一张图，没有跳过什么。
+    //cout << "first image is " << vstrImageFilenames[0]<<endl;
+    //getchar();
 
     int nImages = vstrImageFilenames.size();
 
@@ -82,7 +85,7 @@ int main(int argc, char **argv)
 #endif
 
         // Pass the image to the SLAM system
-        SLAM.TrackMonocular(im,tframe);
+        SLAM.TrackMonocular(im,tframe,ni);//***zh
 
 #ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
@@ -122,6 +125,13 @@ int main(int argc, char **argv)
     // Save camera trajectory
     SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
 
+    char IsSaveMap;
+    cout << "Do you want to save the map?(Y/N)" << endl;
+    cin >> IsSaveMap;
+    if(IsSaveMap == 'Y' || IsSaveMap == 'y')
+        SLAM.SaveMap("MapPointandKeyFrame.bin");
+
+
     return 0;
 }
 
@@ -135,6 +145,8 @@ void LoadImages(const string &strFile, vector<string> &vstrImageFilenames, vecto
     getline(f,s0);
     getline(f,s0);
     getline(f,s0);
+
+
 
     while(!f.eof())
     {

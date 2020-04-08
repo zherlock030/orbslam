@@ -41,9 +41,12 @@ cv::Mat FrameDrawer::DrawFrame()
     vector<cv::KeyPoint> vIniKeys; // Initialization: KeyPoints in reference frame
     vector<int> vMatches; // Initialization: correspondeces with reference keypoints
     vector<cv::KeyPoint> vCurrentKeys; // KeyPoints in current frame
-    vector<bool> vbVO, vbMap; // Tracked MapPoints in current frame
+    vector<bool> vbVO, vbMap;// Tracked MapPoints in current frame
+    vector<int> vbLabel;
     vector<bool> vbUselessPoint; // Useless MapPoints in current frame(outliers)
     int state; // Tracking state
+
+
 
     //Copy variables within scoped mutex
     {
@@ -65,13 +68,16 @@ cv::Mat FrameDrawer::DrawFrame()
             vCurrentKeys = mvCurrentKeys;
             vbVO = mvbVO;
             vbMap = mvbMap;
+            vbLabel = mvbLabel;
             vbUselessPoint = mvbUselessPoint;
+
         }
         else if(mState==Tracking::LOST)
         {
             vCurrentKeys = mvCurrentKeys;
             vbVO = mvbVO;
             vbMap = mvbMap;
+            vbLabel = mvbLabel;
             vbUselessPoint = mvbUselessPoint;
         }
     } // destroy scoped mutex -> release mutex
@@ -80,6 +86,8 @@ cv::Mat FrameDrawer::DrawFrame()
         cvtColor(im,im,CV_GRAY2BGR);
 
     // Now draw the good and bad descriptors
+    // *** comment by ZH
+    /*
     int nGoodDescriptor = mvGoodDescriptor.size();
     for(int i=0; i<nGoodDescriptor; i++){
         cv::Point2f pt1,pt2;
@@ -87,7 +95,7 @@ cv::Mat FrameDrawer::DrawFrame()
         pt1.y=mvGoodDescriptor[i].pt.y-mvGoodDescriptorRadius[i];
         pt2.x=mvGoodDescriptor[i].pt.x+mvGoodDescriptorRadius[i];
         pt2.y=mvGoodDescriptor[i].pt.y+mvGoodDescriptorRadius[i];
-        cv::rectangle(im,pt1,pt2,cv::Scalar(255,255,0));
+        cv::rectangle(im,pt1,pt2,cv::Scalar(255,255,0));  //蓝绿色，good descriptors, 半径每个不一样
         cv::circle(im,mvGoodDescriptor[i].pt,1,cv::Scalar(255,255,0),-1);
     }
     int nBadDescriptor = mvBadDescriptor.size();
@@ -97,9 +105,10 @@ cv::Mat FrameDrawer::DrawFrame()
         pt1.y=mvBadDescriptor[i].pt.y-mvBadDescriptorRadius[i];
         pt2.x=mvBadDescriptor[i].pt.x+mvBadDescriptorRadius[i];
         pt2.y=mvBadDescriptor[i].pt.y+mvBadDescriptorRadius[i];
-        cv::rectangle(im,pt1,pt2,cv::Scalar(0,0,128));
+        cv::rectangle(im,pt1,pt2,cv::Scalar(0,0,128));   // 红色，bad descriptors
         cv::circle(im,mvBadDescriptor[i].pt,1,cv::Scalar(0,0,128),-1);
     }
+    */
 
     //Draw
     if(state==Tracking::NOT_INITIALIZED) //INITIALIZING
@@ -111,7 +120,7 @@ cv::Mat FrameDrawer::DrawFrame()
                 cv::line(im,vIniKeys[i].pt,vCurrentKeys[vMatches[i]].pt,
                         cv::Scalar(0,255,0));
             }
-        }        
+        }
     }
     else if(state==Tracking::OK) //TRACKING
     {
@@ -121,6 +130,7 @@ cv::Mat FrameDrawer::DrawFrame()
         mnDiscardedPoint=0; // For debug use
         const float r = 5;
         const int n = vCurrentKeys.size();
+        int temp[8] =  {1,1,1,1,1,1,1,1};
         for(int i=0;i<n;i++)
         {
             if(vbVO[i] || vbMap[i])
@@ -132,21 +142,120 @@ cv::Mat FrameDrawer::DrawFrame()
                 pt2.y=vCurrentKeys[i].pt.y+r;
 
                 // This is a match to a MapPoint in the map
-                if(vbMap[i])
+                if(vbMap[i] != 0)
                 {
-                    cv::rectangle(im,pt1,pt2,cv::Scalar(0,255,0)); //BGR
+                  if(vbLabel[i]== 1){
+                    cv::rectangle(im,pt1,pt2,cv::Scalar(0,255,0));
                     cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(0,255,0),-1);
+                    if (temp[0] == 0){
+                    cv::putText(im,"This is PC1",vCurrentKeys[i].pt,1,1.0,cv::Scalar(0,255,0),2);//参数一目标图像，参数二文本，参数三文本位置，参数四字体类型， 参数五字体大小，参数六字体颜色，参数七文本厚度
+                    temp[0] = 1;
+                    }
+                  }
+                  if(vbLabel[i]== 2){
+                    cv::rectangle(im,pt1,pt2,cv::Scalar(255,0,0));
+                    cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(255,0,0),-1);
+                  }
+                  if(vbLabel[i]== 3){
+                    cv::rectangle(im,pt1,pt2,cv::Scalar(0,0,255));
+                    cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(0,0,255),-1);
+                  }
+                  if(vbLabel[i]== 4){
+                    cv::rectangle(im,pt1,pt2,cv::Scalar(255,0,255));
+                    cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(255,0,255),-1);
+                    if (temp[1] == 0){
+                    cv::putText(im,"This is PC2",vCurrentKeys[i].pt,1,1.0,cv::Scalar(255,0,255),2);//参数一目标图像，参数二文本，参数三文本位置，参数四字体类型， 参数五字体大小，参数六字体颜色，参数七文本厚度
+                    temp[1] = 1;
+                  }
+                  }
+                  if(vbLabel[i]== 5){
+                    cv::rectangle(im,pt1,pt2,cv::Scalar(0,255,255));
+                    cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(0,255,255),-1);
+                  }
+                  if(vbLabel[i]== 6){
+                    cv::rectangle(im,pt1,pt2,cv::Scalar(255,255,0));
+                    cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(255,255,0),-1);
+                  }
+                  if(vbLabel[i]== 7){
+                    cv::rectangle(im,pt1,pt2,cv::Scalar(128,0,0));
+                    cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(128,0,0),-1);
+                  }
+                  if(vbLabel[i]== 8){
+                    cv::rectangle(im,pt1,pt2,cv::Scalar(0,128,0));
+                    cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(0,128,0),-1);
+                    if (temp[2] == 0){
+                    cv::putText(im,"This is laptop1",vCurrentKeys[i].pt,1,1.0,cv::Scalar(255,0,255),2);//参数一目标图像，参数二文本，参数三文本位置，参数四字体类型， 参数五字体大小，参数六字体颜色，参数七文本厚度
+                    temp[2] = 1;}
+                  }
+                  if(vbLabel[i]== 9){
+                    cv::rectangle(im,pt1,pt2,cv::Scalar(0,0,128));
+                    cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(0,0,128),-1);
+                  }
+                  if(vbLabel[i]== 10){
+                    cv::rectangle(im,pt1,pt2,cv::Scalar(64,64,64));
+                    cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(64,64,64),-1);
+                  }
+                  if(vbLabel[i]== 11){
+                    cv::rectangle(im,pt1,pt2,cv::Scalar(128,0,128));
+                    cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(128,0,128),-1);
+                  }
+                  if(vbLabel[i]== 12){
+                    cv::rectangle(im,pt1,pt2,cv::Scalar(255,255,0));
+                    cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(255,255,0),-1);
+                    if (temp[3] == 0){
+                    cv::putText(im,"This is book1",vCurrentKeys[i].pt,1,1.0,cv::Scalar(255,255,0),2);//参数一目标图像，参数二文本，参数三文本位置，参数四字体类型， 参数五字体大小，参数六字体颜色，参数七文本厚度
+                    temp[3] = 1;}
+                  }
+                  if(vbLabel[i]== 13){
+                    cv::rectangle(im,pt1,pt2,cv::Scalar(0,0,255));
+                    cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(0,0,255),-1);
+                    if (temp[5] == 0){
+                    cv::putText(im,"This is book2",vCurrentKeys[i].pt,1,1.0,cv::Scalar(0,0,255),2);//参数一目标图像，参数二文本，参数三文本位置，参数四字体类型， 参数五字体大小，参数六字体颜色，参数七文本厚度
+                    temp[5] = 1;}
+                  }
+                  if(vbLabel[i]== 14){
+                    cv::rectangle(im,pt1,pt2,cv::Scalar(255,0,0));
+                    cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(255,0,0),-1);
+                    if (temp[6] == 0){
+                    cv::putText(im,"This is book3",vCurrentKeys[i].pt,1,1.0,cv::Scalar(255,0,0),2);//参数一目标图像，参数二文本，参数三文本位置，参数四字体类型， 参数五字体大小，参数六字体颜色，参数七文本厚度
+                    temp[6] = 1;}
+                  }
+                  if(vbLabel[i]== 15){
+                    cv::rectangle(im,pt1,pt2,cv::Scalar(0,255,0));
+                    cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(0,255,0),-1);
+                    if (temp[4] == 0){
+                    cv::putText(im,"This is keyboard1",vCurrentKeys[i].pt,1,1.0,cv::Scalar(0,255,0),2);//参数一目标图像，参数二文本，参数三文本位置，参数四字体类型， 参数五字体大小，参数六字体颜色，参数七文本厚度
+                    temp[4] = 1;}
+                  }
+                  if(vbLabel[i]== 16){
+                    cv::rectangle(im,pt1,pt2,cv::Scalar(0,0,255));
+                    cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(0,0,255),-1);
+                    if (temp[7] == 0){
+                    cv::putText(im,"This is chair1",vCurrentKeys[i].pt,1,1.0,cv::Scalar(0,255,0),2);//参数一目标图像，参数二文本，参数三文本位置，参数四字体类型， 参数五字体大小，参数六字体颜色，参数七文本厚度
+                    temp[7] = 1;}
+                  }
+                  if(vbLabel[i]== 17){
+                    cv::rectangle(im,pt1,pt2,cv::Scalar(255,0,0));
+                    cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(255,0,0),-1);
+                  }
+                  if(vbLabel[i]== 18){
+                    cv::rectangle(im,pt1,pt2,cv::Scalar(0,255,255));
+                    cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(0,255,255),-1);
+                  }
+                //std::cout << "vbmap[i]" << vbMap[i] << std::endl;
+                    //cv::rectangle(im,pt1,pt2,cv::Scalar(0,255,0)); //BGR
+                    //cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(0,255,0),-1);
                     mnTracked++;
                 }
                 else // This is match to a "visual odometry" MapPoint created in the last frame
                 {
-                    cv::rectangle(im,pt1,pt2,cv::Scalar(255,0,0));
-                    cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(255,0,0),-1);
+                    //cv::rectangle(im,pt1,pt2,cv::Scalar(255,0,0));//nothing showed, 这里就没东西了
+                    //cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(255,0,0),-1);
                     mnTrackedVO++;
                 }
             }
             else{
-                cv::circle(im,vCurrentKeys[i].pt,0,cv::Scalar(0,0,255),-1);
+                //cv::circle(im,vCurrentKeys[i].pt,0,cv::Scalar(0,0,255),-1); //BGR,red circle,
                 mnUselessPoint++;
             }
             if(mvbDiscardedPoint[i]){ // For debug use
@@ -155,12 +264,12 @@ cv::Mat FrameDrawer::DrawFrame()
                 pt1.y=vCurrentKeys[i].pt.y-r;
                 pt2.x=vCurrentKeys[i].pt.x+r;
                 pt2.y=vCurrentKeys[i].pt.y+r;
-                cv::rectangle(im,pt1,pt2,cv::Scalar(255,0,255));
-                cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(255,0,255),-1);
+                //cv::rectangle(im,pt1,pt2,cv::Scalar(255,0,255));  //zise, purple
+                //cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(255,0,255),-1);
                 mnDiscardedPoint++;
             }
         }
-        
+
     }
     else if(mState==Tracking::LOST){
         mnTracked=0;
@@ -231,7 +340,7 @@ cv::Mat FrameDrawer::DrawFrame()
                 mnDiscardedPoint++;
             }
         }
-        
+
     }
 
     cv::Mat imWithInfo;
@@ -305,6 +414,7 @@ void FrameDrawer::Update(Tracking *pTracker)
     N = mvCurrentKeys.size();
     mvbVO = vector<bool>(N,false);
     mvbMap = vector<bool>(N,false);
+    mvbLabel = vector<int>(N,false); // ***zh
     mvbUselessPoint = vector<bool>(N,false);
     mvbDiscardedPoint = vector<bool>(N,false); // For debug use
     mbOnlyTracking = pTracker->mbOnlyTracking;
@@ -340,6 +450,48 @@ void FrameDrawer::Update(Tracking *pTracker)
                         mvbMap[i]=true;
                     else
                         mvbVO[i]=true;
+                    //***zh
+                    if(pMP->label != ""){
+                      if (pMP->label == "tv1")
+                      mvbLabel[i] = 1;
+                      if (pMP->label == "tv2")
+                      mvbLabel[i] = 1;//2;
+                      if (pMP->label == "tv3")
+                      mvbLabel[i] = 1;//3;
+                      if (pMP->label == "tv4")
+                      mvbLabel[i] = 4;//4;
+                      if (pMP->label == "tv5")
+                      mvbLabel[i] = 1;//5;
+                      if (pMP->label == "tv6")
+                      mvbLabel[i] = 4;//6
+                      if (pMP->label == "laptop1")
+                      mvbLabel[i] = 0;//7;
+                      if (pMP->label == "laptop2")
+                      mvbLabel[i] = 8;//8;
+                      if (pMP->label == "laptop3")
+                      mvbLabel[i] = 0;//9;
+                      if (pMP->label == "diningtable1")
+                      mvbLabel[i] = 0;//10;
+                      if (pMP->label == "book1")
+                      mvbLabel[i] = 0;//11;
+                      if (pMP->label == "book2")
+                      mvbLabel[i] = 12;//12;
+                      if (pMP->label == "book3")
+                      mvbLabel[i] = 13;//13;
+                      if (pMP->label == "book4")
+                      mvbLabel[i] = 14;//14;
+                      if (pMP->label == "keyboard1")
+                      mvbLabel[i] = 15;//15;
+                      if (pMP->label == "chair2")
+                      mvbLabel[i] = 16;//16;
+                      if (pMP->label == "chair3")
+                      mvbLabel[i] = 16;//17;
+                      if (pMP->label == "cup1")
+                      mvbLabel[i] = 18;//18;
+                    }else{
+                      mvbLabel[i] = 0;
+                    }
+
                 }
                 else{
                     mvbUselessPoint[i]=true;  // For debug use
